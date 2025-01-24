@@ -37,7 +37,7 @@ log_file = "job_submissions.txt"
 log_file_path = "available_jobs_log.txt"
 if not os.path.exists(log_file_path):
     open(log_file_path, 'w').close()
-
+ 
 # Counter for the submissions
 submission_count = 0
 
