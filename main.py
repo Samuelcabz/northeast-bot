@@ -43,7 +43,7 @@ last_available_jobs_count = 0
 
 est_timezone = pytz.timezone("US/Eastern")
 
-
+ 
 def send_email_notification(subject, body):
     from_email = "botautomation707@gmail.com"  # Replace with your email
     from_name = "Bot"  # Desired sender name
