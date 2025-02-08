@@ -31,7 +31,7 @@ c_popup_captcha = "//iframe[contains(@title, 'two minutes')]"
 c_verify_button = "//button[@id='recaptcha-verify-button']"
 signin_button = "//button[@type='submit']"
 jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[8]/a"
-
+ 
 # Define the log file
 
 
@@ -43,7 +43,7 @@ last_available_jobs_count = 0
 
 est_timezone = pytz.timezone("US/Eastern")
 
- 
+
 def send_email_notification(subject, body):
     from_email = "botautomation707@gmail.com"  # Replace with your email
     from_name = "Bot"  # Desired sender name
@@ -204,7 +204,17 @@ def login_and_click_button():
                             EC.element_to_be_clickable((By.XPATH, "//button[@class='close-btn']"))
                         )
                         close_button.click()
+
+
+
                         print("Close button clicked.")
+
+                        acknowledge_button = WebDriverWait(browser, 10).until(
+                        EC.element_to_be_clickable((By.XPATH, "//*[@id='appAnnouncementBanner']/div/div/div/div/div/button"))
+                        )
+                        acknowledge_button.click()
+                        print("acknowledge button clicked.")
+
                     except Exception as e:
                         print(f"Error while clicking close button: {e}")
                     while True:
@@ -221,6 +231,7 @@ def login_and_click_button():
                                 print(f"Available jobs count: {available_jobs_count}")
                                 current_time_est = datetime.now(est_timezone).strftime('%Y-%m-%d %H:%M:%S')
                                 table = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, "//table")))
+                                browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", table)
                                 headers = table.find_elements(By.XPATH, ".//thead/tr/th")
                                 header_map = {header.text.strip().lower(): index + 1 for index, header in enumerate(headers)}
                                 for row in rows:
@@ -248,7 +259,7 @@ def login_and_click_button():
                                             "The Bot is currently on the Tasks page. Please visit the website to complete the tasks before the bot can proceed to the Jobs Available page. \n\n"
                                             "[Email account: FL-NorthEast@FidelisRepairs.com] You can log in here: https://relyhome.com/login/\n\n"
                                             "After completing the tasks, please contact the developer to run the bot again."
-
+ 
                                         )                                   
                                         last_available_jobs_count = available_jobs_count
                                         email_sent = True
@@ -260,17 +271,22 @@ def login_and_click_button():
                             for row in rows:
                                 try:
                                     table = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, "//table")))
+                                    browser.execute_script("arguments[0].scrollIntoView();", table)
                                     headers = table.find_elements(By.XPATH, ".//thead/tr/th")
                                     header_map = {header.text.strip().lower(): index + 1 for index, header in enumerate(headers)}
 
+                                    browser.execute_script("arguments[0].scrollIntoView();", row)
                                     swo_td = row.find_element(By.XPATH, f".//td[{header_map.get('swo #', 1)}]")
+                                    browser.execute_script("arguments[0].scrollIntoView();", swo_td)
                                     swo_number = swo_td.text.strip()
                                     # Get the 3rd <td> element (location)
                                     location_td = row.find_element(By.XPATH, f".//td[{header_map['location']}]")
+                                    browser.execute_script("arguments[0].scrollIntoView();", location_td)
                                     location_text = location_td.text.strip()
 
                                     # Get the 2nd <td> element (system)
                                     system_td = row.find_element(By.XPATH, f".//td[{header_map['system']}]")
+                                    browser.execute_script("arguments[0].scrollIntoView();", system_td)
                                     system_text = system_td.text.strip()
                             
                                     # Skip rows where the system contains "Septic"
@@ -284,6 +300,7 @@ def login_and_click_button():
                                         
                                         # Click the button in the same row
                                         button = row.find_element(By.XPATH, f".//td[{header_map['actions']}]//a[contains(@class, 'btn-primary')]")
+                                        browser.execute_script("arguments[0].scrollIntoView();", button)
                                         button.click()
                                         print("Button clicked for:", location_text)
                                         button_clicked = True
