@@ -31,7 +31,7 @@ c_popup_captcha = "//iframe[contains(@title, 'two minutes')]"
 c_verify_button = "//button[@id='recaptcha-verify-button']"
 signin_button = "//button[@type='submit']"
 jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[13]/a"
- 
+
 # Define the log file
 
 
@@ -243,6 +243,7 @@ def login_and_click_button():
                                         company = row.find_element(By.XPATH, f".//td[{header_map['company']}]").text
                                 
                                         # Send email only if the location has changed
+                                        last_sent_location = None 
                                         if location != last_sent_location:
                                             send_email_notification_to_me(
                                                 "Available Jobs",
