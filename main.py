@@ -242,12 +242,14 @@ def login_and_click_button():
                                         distance = row.find_element(By.XPATH, f".//td[{header_map['distance']}]").text
                                         company = row.find_element(By.XPATH, f".//td[{header_map['company']}]").text
                                 
-                                        send_email_notification_to_me(
-                                            "Available Jobs", 
-                                             f"System: {system}, Brand: {brand}, Location: {location}, Distance: {distance}, Company: {company}\n\n"
-                                             f"TimeStamp: {current_time_est}"
-
-                                        )
+                                        # Send email only if the location has changed
+                                        if location != last_sent_location:
+                                            send_email_notification_to_me(
+                                                "Available Jobs",
+                                                f"System: {system}, Brand: {brand}, Location: {location}, Distance: {distance}, Company: {company}\n\n"
+                                                f"TimeStamp: {current_time_est}"
+                                            )
+                                            last_sent_location = location  # Update last sent location
                                     except Exception as e:
                                         print(f"Error processing row: {e}")
                                         continue
