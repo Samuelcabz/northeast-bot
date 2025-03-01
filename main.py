@@ -217,6 +217,8 @@ def login_and_click_button():
 
                     except Exception as e:
                         print(f"Error while clicking close button: {e}")
+
+                    last_sent_location = None 
                     while True:
                         try:
                             print("Waiting for available jobs...", browser.current_url)
@@ -243,7 +245,7 @@ def login_and_click_button():
                                         company = row.find_element(By.XPATH, f".//td[{header_map['company']}]").text
                                 
                                         # Send email only if the location has changed
-                                        last_sent_location = None 
+
                                         if location != last_sent_location:
                                             send_email_notification_to_me(
                                                 "Available Jobs",
