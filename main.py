@@ -30,7 +30,7 @@ c_checkbox_captcha = "//span[@role='checkbox']"
 c_popup_captcha = "//iframe[contains(@title, 'two minutes')]"
 c_verify_button = "//button[@id='recaptcha-verify-button']"
 signin_button = "//button[@type='submit']"
-jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[8]/a"
+jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[13]/a"
  
 # Define the log file
 
