@@ -14,6 +14,7 @@ from email.mime.text import MIMEText
 from selenium.webdriver.chrome.options import Options
 import sys
 import pytz
+import requests
 
 # CONFIGURATION
 url = "https://relyhome.com/login/"
