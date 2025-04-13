@@ -75,6 +75,24 @@ def send_email_notification_to_me(subject, body):
         server.sendmail(from_email, to_email, msg.as_string())
         print("Email sent")
 
+def send_job_to_api(system, location, day, time_slot,url):
+    try:
+        response = requests.post("https://bot101.pythonanywhere.com/api/jobs/store", json={
+            "system": system,
+            "location": location,
+            "day": day,
+            "time_slot": time_slot,
+            "url": url,
+            "swo": ""
+        })
+        if response.status_code == 200:
+            print("Job data sent to web dashboard.")
+        else:
+            print(f"Failed to send job. Status: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        print(f"Error sending job to API: {e}")
+
+
 # MAIN TASK: Login and click button based on location filter
 def login_and_click_button():
     global submission_count
@@ -430,6 +448,7 @@ def login_and_click_button():
                                                 "Visit the website for more information or to reschedule the day.\n"
                                                 "[Email account: FL-NorthEast@FidelisRepairs.com]"
                                             )
+                                            send_job_to_api(system_text, location_text, day_text, slot_text, browser.current_url)
 
 
                                             # Return to jobs/available page
