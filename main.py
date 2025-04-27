@@ -18,18 +18,10 @@ import requests
 
 # CONFIGURATION
 url = "https://relyhome.com/login/"
-apikey = 'fb6fe58770b64c8de8fc2c6abdf449db'  # 2Captcha API key
+apikey = 'ccf7183648c4316217ed45e5a11c78a5'  # 2Captcha API key
 solver = TwoCaptcha(apikey, pollingInterval=1)
 
 # LOCATORS
-c_try_again = "//div[@class='rc-imageselect-incorrect-response']"
-c_select_more = "//div[@class='rc-imageselect-error-select-more']"
-c_dynamic_more = "//div[@class='rc-imageselect-error-dynamic-more']"
-c_select_something = "//div[@class='rc-imageselect-error-select-something']"
-c_iframe_captcha = "//iframe[@title='reCAPTCHA']"
-c_checkbox_captcha = "//span[@role='checkbox']"
-c_popup_captcha = "//iframe[contains(@title, 'two minutes')]"
-c_verify_button = "//button[@id='recaptcha-verify-button']"
 signin_button = "//button[@type='submit']"
 jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[13]/a"
 
@@ -101,12 +93,26 @@ def login_and_click_button():
     global last_available_jobs_count    # Access the global submission count
 
     options = Options()
-    options.add_argument("--headless")  # Enables headless mode
-    options.add_argument("--disable-gpu")  # Disable GPU acceleration (optional)
-    options.add_argument("--no-sandbox")  # Disable sandboxing (optional)
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080")  # Explicitly set the window size
-    options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--log-level=3")
+    options.page_load_strategy = 'eager'
+
+    # Block unnecessary resources
+    prefs = {
+        'profile.managed_default_content_settings.images': 2,
+        'profile.managed_default_content_settings.stylesheets': 2,
+        'profile.managed_default_content_settings.fonts': 2,
+        'profile.managed_default_content_settings.media_stream': 2,
+        'profile.managed_default_content_settings.notifications': 2,
+    }
+    options.add_experimental_option('prefs', prefs)
+    options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})   
 
     with webdriver.Chrome(options=options) as browser:
         browser.maximize_window()
@@ -124,96 +130,25 @@ def login_and_click_button():
                 # Instantiate helper classes
                 page_actions = PageActions(browser)
                 page_actions.enter_credentials("FL-NorthEast@FidelisRepairs.com", "Fidelis1!")
-                captcha_helper = CaptchaHelper(browser, solver)
 
-                # Click on the captcha checkbox
-                page_actions.switch_to_iframe(c_iframe_captcha)
-                page_actions.click_checkbox(c_checkbox_captcha)
-                page_actions.switch_to_default_content()
-                page_actions.switch_to_iframe(c_popup_captcha)
-                time.sleep(1)
+                recaptcha_div = browser.find_element(
+                    By.CSS_SELECTOR, "div.g-recaptcha"
+                )
+                sitekey = recaptcha_div.get_attribute("data-sitekey")
+                print("Using sitekey:", sitekey)
+                recap = solver.recaptcha(
+                    sitekey=sitekey,
+                    url=browser.current_url
+                )
+                token = recap['code']
+                print("Got reCAPTCHA token:", token)
 
-                script_get_data_captcha = captcha_helper.load_js_script('js_scripts/get_captcha_data.js')
-                script_change_tracking = captcha_helper.load_js_script('js_scripts/track_image_updates.js')
-
-                captcha_helper.execute_js(script_get_data_captcha)
-                captcha_helper.execute_js(script_change_tracking)
-
-                id = None  
-
-                while True:
-                    captcha_data = browser.execute_script("return getCaptchaData();")
-            
-                    params = {
-                        "method": "base64",
-                        "img_type": "recaptcha",
-                        "recaptcha": 1,
-                        "cols": captcha_data['columns'],
-                        "rows": captcha_data['rows'],
-                        "textinstructions": captcha_data['comment'],
-                        "lang": "en",
-                        "can_no_answer": 1
-                    }
-            
-                    if params['cols'] == 3 and id:
-                        params["previousID"] = id
-            
-                    print("Params before solving captcha:", params)
-            
-                    result = captcha_helper.solver_captcha(file=captcha_data['body'], **params)
-            
-                    if result is None:
-                        print("Captcha solving failed or timed out. Stopping the process.")
-                        break
-            
-                    elif result and 'No_matching_images' not in result['code']:
-                        if id is None and params['cols'] == 3 and result['captchaId']:
-                            id = result['captchaId']  # Save id for subsequent iterations
-            
-                        answer = result['code']
-                        number_list = captcha_helper.pars_answer(answer)
-            
-                        # Processing for 3x3
-                        if params['cols'] == 3:
-                            page_actions.clicks(number_list)
-            
-                            image_update = page_actions.check_for_image_updates()
-            
-                            if image_update:
-                                print(f"Images updated, continuing with previousID: {id}")
-                                continue  
-            
-                            page_actions.click_check_button(c_verify_button)
-            
-                        # Processing for 4x4
-                        elif params['cols'] == 4:
-                            page_actions.clicks(number_list)
-                            page_actions.click_check_button(c_verify_button)
-            
-                            image_update = page_actions.check_for_image_updates()
-            
-                            if image_update:
-                                print(f"Images updated, continuing without previousID")
-                                continue  
-            
-                        # If the images are not updated, check the error messages
-                        if captcha_helper.handle_error_messages(c_try_again, c_select_more, c_dynamic_more, c_select_something):
-                            continue  
-            
-                        # If there are no errors, send the captcha
-                        page_actions.switch_to_default_content()
-                        page_actions.click_check_button(signin_button)
-                        break  
-            
-                    elif 'No_matching_images' in result['code']:
-                        # If the captcha returned the code "no_matching_images", check the errors
-                        page_actions.click_check_button(c_verify_button)
-                        if captcha_helper.handle_error_messages(c_try_again, c_select_more, c_dynamic_more, c_select_something):
-                            continue  
-                        else:
-                            page_actions.switch_to_default_content()
-                            page_actions.click_check_button(signin_button)
-                            break  
+                # Inject token into the form
+                browser.execute_script("""
+                  document.querySelector('textarea#g-recaptcha-response').style.display = '';
+                  document.querySelector('textarea#g-recaptcha-response').value = arguments[0];
+                """, token)
+                page_actions.click_check_button(signin_button)
 
                 # Check if login was successful by verifying URL or page content
                 current_url = browser.current_url
