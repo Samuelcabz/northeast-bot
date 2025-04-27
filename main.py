@@ -120,7 +120,6 @@ def login_and_click_button():
 
                 browser.get(url)
                 print("Started")
-                send_balance_to_api()
 
                 # Instantiate helper classes
                 page_actions = PageActions(browser)
