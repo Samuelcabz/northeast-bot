@@ -242,7 +242,11 @@ def login_and_click_button():
                                         )                                   
                                         last_available_jobs_count = available_jobs_count
                                         email_sent = True
-                                        sys.exit()
+                                        time.sleep(1800)
+                                        my_account_button = browser.find_element(By.ID, "page-header-user-dropdown")
+                                        my_account_button.click()
+                                        logout_button = browser.find_element(By.XPATH, "//a[@href='https://relyhome.com/logout/']")
+                                        logout_button.click()
 
                             button_clicked = False
 
@@ -463,11 +467,11 @@ def login_and_click_button():
 
                     if browser.current_url == "https://relyhome.com/tasks/":
                         # If the email has already been sent, log out again
+                        time.sleep(1800)
                         my_account_button = browser.find_element(By.ID, "page-header-user-dropdown")
                         my_account_button.click()
                         logout_button = browser.find_element(By.XPATH, "//a[@href='https://relyhome.com/logout/']")
                         logout_button.click()
-                        sys.exit()
 
                         
 
