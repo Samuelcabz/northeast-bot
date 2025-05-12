@@ -268,6 +268,12 @@ def login_and_click_button():
                                     location_td = row.find_element(By.XPATH, f".//td[{header_map['location']}]")
                                     browser.execute_script("arguments[0].scrollIntoView();", location_td)
                                     location_text = location_td.text.strip()
+                                    loc_lower     = location_text.lower()
+
+                                    excluded = ["live oak", "lake city", "cedar key", "alachua"]
+                                    if any(city in loc_lower for city in excluded):
+                                        print(f"Skipping excluded location: {location_text}")
+                                        continue
 
                                     # Get the 2nd <td> element (system)
                                     system_td = row.find_element(By.XPATH, f".//td[{header_map['system']}]")
