@@ -16,16 +16,21 @@ import sys
 import pytz
 import requests
 
+
+# CONFIGURATION
 url = "https://relyhome.com/login/"
 apikey = 'ccf7183648c4316217ed45e5a11c78a5'  # 2Captcha API key
 solver = TwoCaptcha(apikey, pollingInterval=1)
 ACCOUNT_EMAIL = "FL-NorthEast@FidelisRepairs.com"
 
+# LOCATORS
 signin_button = "//button[@type='submit']"
 jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[13]/a"
+ 
+# Define the log file
 
 
-
+# Counter for the submissions
 submission_count = 0
  
 email_sent = False
@@ -83,7 +88,6 @@ def send_job_to_api(system, location, day, time_slot,url,swo):
     except Exception as e:
         print(f"Error sending job to API: {e}")
 
-
 def get_twocaptcha_balance():
     try:
         solver = TwoCaptcha(apikey)
@@ -116,6 +120,7 @@ def send_balance_to_api():
 
 
 
+
 # MAIN TASK: Login and click button based on location filter
 def login_and_click_button():
     global submission_count
@@ -127,10 +132,11 @@ def login_and_click_button():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
-    options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})   
+    options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})  
+    driver = webdriver.Chrome(options=options)
+    driver.set_window_size(1920, 1080)
 
     with webdriver.Chrome(options=options) as browser:
-        browser.maximize_window()
         start_time = time.time()  
         while True:
             try:
@@ -147,6 +153,7 @@ def login_and_click_button():
                 # Instantiate helper classes
                 page_actions = PageActions(browser)
                 page_actions.enter_credentials("FL-NorthEast@FidelisRepairs.com", "Fidelis1!")
+
 
                 recaptcha_div = browser.find_element(
                     By.CSS_SELECTOR, "div.g-recaptcha"
@@ -165,25 +172,35 @@ def login_and_click_button():
                   document.querySelector('textarea#g-recaptcha-response').style.display = '';
                   document.querySelector('textarea#g-recaptcha-response').value = arguments[0];
                 """, token)
-                page_actions.click_check_button(signin_button)
+                WebDriverWait(browser, 5).until_not(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".grecaptcha-badge"))
+                )
+                login_btn = WebDriverWait(browser, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, signin_button))
+                )
+                browser.execute_script("arguments[0].scrollIntoView(true);", login_btn)
+                browser.execute_script("arguments[0].click();", login_btn)
 
+                # Check if login was successful by verifying URL or page content
                 current_url = browser.current_url
                 if "jobs/available" in browser.current_url:
                     print("Login successful. Redirected to available jobs page.")
                     try:
                         close_button = WebDriverWait(browser, 10).until(
-                            EC.element_to_be_clickable((By.XPATH, "//button[@class='close-btn']"))
+                            EC.presence_of_element_located((By.XPATH, "//button[@class='close-btn']"))
                         )
-                        close_button.click()
+                        browser.execute_script("arguments[0].scrollIntoView(true);", close_button)
+                        browser.execute_script("arguments[0].click();", close_button)
 
 
 
                         print("Close button clicked.")
 
                         acknowledge_button = WebDriverWait(browser, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, "//*[@id='appAnnouncementBanner']/div/div/div/div/div/button"))
+                            EC.presence_of_element_located((By.XPATH, "//*[@id='appAnnouncementBanner']//button"))
                         )
-                        acknowledge_button.click()
+                        browser.execute_script("arguments[0].scrollIntoView(true);", acknowledge_button)
+                        browser.execute_script("arguments[0].click();", acknowledge_button)
                         print("acknowledge button clicked.")
 
                     except Exception as e:
@@ -215,15 +232,14 @@ def login_and_click_button():
                                         distance = row.find_element(By.XPATH, f".//td[{header_map['distance']}]").text
                                         company = row.find_element(By.XPATH, f".//td[{header_map['company']}]").text
                                 
-                                        # Send email only if the location has changed
-
                                         if location != last_sent_location:
                                             send_email_notification_to_me(
-                                                "Available Jobs",
+                                                "Available Jobs", 
                                                 f"System: {system}, Brand: {brand}, Location: {location}, Distance: {distance}, Company: {company}\n\n"
                                                 f"TimeStamp: {current_time_est}"
+
                                             )
-                                            last_sent_location = location  # Update last sent location
+                                            last_sent_location = location
                                     except Exception as e:
                                         print(f"Error processing row: {e}")
                                         continue
@@ -241,9 +257,11 @@ def login_and_click_button():
                                         email_sent = True
                                         time.sleep(1800)
                                         my_account_button = browser.find_element(By.ID, "page-header-user-dropdown")
-                                        my_account_button.click()
+                                        browser.execute_script("arguments[0].scrollIntoView(true);", my_account_button)
+                                        browser.execute_script("arguments[0].click();", my_account_button)
                                         logout_button = browser.find_element(By.XPATH, "//a[@href='https://relyhome.com/logout/']")
-                                        logout_button.click()
+                                        browser.execute_script("arguments[0].scrollIntoView(true);", logout_button)
+                                        browser.execute_script("arguments[0].click();", logout_button)
 
                             button_clicked = False
 
@@ -286,8 +304,8 @@ def login_and_click_button():
                                         
                                         # Click the button in the same row
                                         button = row.find_element(By.XPATH, f".//td[{header_map['actions']}]//a[contains(@class, 'btn-primary')]")
-                                        browser.execute_script("arguments[0].scrollIntoView();", button)
-                                        button.click()
+                                        browser.execute_script("arguments[0].scrollIntoView(true);", button)
+                                        browser.execute_script("arguments[0].click();", button)
                                         print("Button clicked for:", location_text)
                                         button_clicked = True
                                         break  # Stop after first match
@@ -372,17 +390,17 @@ def login_and_click_button():
                                                 if "11:00 AM - 03:00 PM" in slot_text:
                                                     print("Selecting 11:00 AM - 03:00 PM time slot.")
                                                     browser.execute_script("arguments[0].scrollIntoView(true);", slot)
-                                                    slot.click()
+                                                    browser.execute_script("arguments[0].click();", slot)
                                                     break
                                                 elif "07:00 AM - 11:00 AM" in slot.get_attribute("outerHTML"):
                                                     print("Selecting 07:00 AM - 11:00 AM slot.")
                                                     browser.execute_script("arguments[0].scrollIntoView(true);", slot)
-                                                    slot.click()
+                                                    browser.execute_script("arguments[0].click();", slot)
                                                     break
                                                 elif "03:00 PM - 08:00 PM" in slot.get_attribute("outerHTML"):
                                                     print("Selecting 03:00 PM - 08:00 PM slot.")
                                                     browser.execute_script("arguments[0].scrollIntoView(true);", slot)
-                                                    slot.click()
+                                                    browser.execute_script("arguments[0].click();", slot)
                                                     break
 
                                             # Submit the form
@@ -392,7 +410,7 @@ def login_and_click_button():
                                             browser.execute_script("arguments[0].scrollIntoView(true);", submit_button)
                                             time.sleep(1)  # Wait for the scroll to complete
                                             print("Submitting selection...")
-                                            submit_button.click()
+                                            browser.execute_script("arguments[0].click();", submit_button)
                                             WebDriverWait(browser, 10).until(
                                                 EC.url_contains("offer.php")
                                             )
@@ -444,18 +462,17 @@ def login_and_click_button():
                             else:
                                 print("No matching jobs found. Retrying...", browser.current_url)
                                 # Click the 'jobs_available_xpath' to reload the job listings page
-                                jobs_available_link = WebDriverWait(browser, 10).until(
-                                    EC.element_to_be_clickable((By.XPATH, jobs_available_xpath)))
-                                jobs_available_link.click()
+                                jobs_available_link = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, jobs_available_xpath)))
+                                browser.execute_script("arguments[0].scrollIntoView(true);", jobs_available_link)
+                                browser.execute_script("arguments[0].click();", jobs_available_link)
                                 time.sleep(3)
 
                         except Exception as e:
                             print(f"No jobs available or error: {e}. Retrying...", browser.current_url) 
                             # Click the 'jobs_available_xpath' to reload the job listings page
-                            jobs_available_link = WebDriverWait(browser, 10).until(
-                                EC.element_to_be_clickable((By.XPATH, jobs_available_xpath))
-                            )
-                            jobs_available_link.click()
+                            jobs_available_link = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, jobs_available_xpath)))
+                            browser.execute_script("arguments[0].scrollIntoView(true);", jobs_available_link)
+                            browser.execute_script("arguments[0].click();", jobs_available_link)
                             time.sleep(3)
 
                 else:
@@ -475,9 +492,11 @@ def login_and_click_button():
                         # If the email has already been sent, log out again
                         time.sleep(1800)
                         my_account_button = browser.find_element(By.ID, "page-header-user-dropdown")
-                        my_account_button.click()
+                        browser.execute_script("arguments[0].scrollIntoView(true);", my_account_button)
+                        browser.execute_script("arguments[0].click();", my_account_button)
                         logout_button = browser.find_element(By.XPATH, "//a[@href='https://relyhome.com/logout/']")
-                        logout_button.click()
+                        browser.execute_script("arguments[0].scrollIntoView(true);", logout_button)
+                        browser.execute_script("arguments[0].click();", logout_button)
 
                         
 
@@ -489,14 +508,13 @@ def login_and_click_button():
                 if browser.current_url == "https://relyhome.com/dashboard/":
                     # If the email has already been sent, log out again
                     my_account_button = browser.find_element(By.ID, "page-header-user-dropdown")
-                    my_account_button.click()
+                    browser.execute_script("arguments[0].scrollIntoView(true);", my_account_button)
+                    browser.execute_script("arguments[0].click();", my_account_button)
                     logout_button = browser.find_element(By.XPATH, "//a[@href='https://relyhome.com/logout/']")
-                    logout_button.click()
+                    browser.execute_script("arguments[0].scrollIntoView(true);", logout_button)
+                    browser.execute_script("arguments[0].click();", logout_button)
                 time.sleep(10)
                 continue
 
 if __name__ == "__main__":
     login_and_click_button()
-
-
-
