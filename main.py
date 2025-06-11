@@ -16,20 +16,16 @@ import sys
 import pytz
 import requests
 
-# CONFIGURATION
 url = "https://relyhome.com/login/"
 apikey = 'ccf7183648c4316217ed45e5a11c78a5'  # 2Captcha API key
 solver = TwoCaptcha(apikey, pollingInterval=1)
 ACCOUNT_EMAIL = "FL-NorthEast@FidelisRepairs.com"
 
-# LOCATORS
 signin_button = "//button[@type='submit']"
 jobs_available_xpath = "//*[@id='sidebar']/div[2]/div[1]/div[2]/div/div/div/div/ul/li[13]/a"
 
-# Define the log file
 
 
-# Counter for the submissions
 submission_count = 0
  
 email_sent = False
@@ -171,7 +167,6 @@ def login_and_click_button():
                 """, token)
                 page_actions.click_check_button(signin_button)
 
-                # Check if login was successful by verifying URL or page content
                 current_url = browser.current_url
                 if "jobs/available" in browser.current_url:
                     print("Login successful. Redirected to available jobs page.")
@@ -502,3 +497,6 @@ def login_and_click_button():
 
 if __name__ == "__main__":
     login_and_click_button()
+
+
+
